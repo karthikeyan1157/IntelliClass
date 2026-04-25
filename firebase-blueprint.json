@@ -1,0 +1,283 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Base user account information",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["student", "faculty", "hod", "admin"] },
+        "profileCompleted": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "role"]
+    },
+    "StudentProfile": {
+      "title": "Student Profile",
+      "description": "Detailed student information",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "regNo": { "type": "string" },
+        "year": { "type": "string" },
+        "department": { "type": "string" },
+        "dob": { "type": "string" },
+        "section": { "type": "string" },
+        "classroomId": { "type": "string" },
+        "internalMarks": {
+          "type": "object",
+          "properties": {
+            "internal1": { "type": "number" },
+            "internal2": { "type": "number" }
+          }
+        }
+      }
+    },
+    "FacultyProfile": {
+      "title": "Faculty Profile",
+      "description": "Detailed faculty information",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "facultyId": { "type": "string" },
+        "department": { "type": "string" },
+        "advisorOfClass": { "type": "string", "description": "e.g. 2nd Year Section A" }
+      }
+    },
+    "HodProfile": {
+      "title": "HOD Profile",
+      "description": "Detailed HOD information",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "hodId": { "type": "string" },
+        "department": { "type": "string" },
+        "managedYears": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "AttendanceRecord": {
+      "title": "Attendance Record",
+      "description": "Daily attendance for a student",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string", "format": "date" },
+        "status": { "type": "string", "enum": ["present", "absent"] },
+        "reason": { "type": "string" },
+        "markedBy": { "type": "string" }
+      }
+    },
+    "Announcement": {
+      "title": "Announcement",
+      "description": "Bulletin board message",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "category": { "type": "string", "enum": ["fee", "bus", "general", "exam", "event"] },
+        "targetDept": { "type": "string" },
+        "targetClass": { "type": "string", "description": "e.g. 2nd Year Section A" },
+        "targetRole": { "type": "string", "enum": ["student", "faculty", "all"] },
+        "author": { "type": "string" },
+        "authorRole": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Document": {
+      "title": "Document",
+      "description": "Student files",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "url": { "type": "string" },
+        "type": { "type": "string" },
+        "uploadedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Course": {
+      "title": "Course",
+      "description": "A subject taught by a faculty",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string" },
+        "name": { "type": "string" },
+        "department": { "type": "string" },
+        "facultyId": { "type": "string" },
+        "targetClass": { "type": "string", "description": "e.g. III Year Sec A" },
+        "credits": { "type": "number" }
+      },
+      "required": ["code", "name", "facultyId", "targetClass"]
+    },
+    "Classroom": {
+      "title": "Classroom",
+      "description": "A group of students managed together",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "e.g. III Year Sec A" },
+        "department": { "type": "string" },
+        "hodId": { "type": "string" },
+        "advisorId": { "type": "string" },
+        "studentIds": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["name", "department"]
+    },
+    "Assignment": {
+      "title": "Assignment",
+      "description": "A task assigned to a class or course",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "courseId": { "type": "string" },
+        "classroomId": { "type": "string" },
+        "facultyId": { "type": "string" },
+        "attachmentUrl": { "type": "string" },
+        "attachmentType": { "type": "string" },
+        "dueDate": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "facultyId", "courseId", "classroomId"]
+    },
+    "LearningResource": {
+      "title": "Learning Resource",
+      "description": "Notes or study materials shared by faculty",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "type": { "type": "string", "enum": ["pdf", "link", "doc", "video", "image", "excel"] },
+        "url": { "type": "string" },
+        "courseId": { "type": "string" },
+        "facultyId": { "type": "string" },
+        "attachmentUrl": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "url", "facultyId", "courseId"]
+    },
+    "Feedback": {
+      "title": "Feedback",
+      "description": "Comment from faculty to student",
+      "type": "object",
+      "properties": {
+        "content": { "type": "string" },
+        "facultyId": { "type": "string" },
+        "facultyName": { "type": "string" },
+        "category": { "type": "string", "enum": ["academic", "behavioral", "attendance", "other"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["content", "facultyId", "category"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "User alert for events",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["announcement", "assignment", "grade", "feedback"] },
+        "senderName": { "type": "string" },
+        "senderRole": { "type": "string" },
+        "read": { "type": "boolean" },
+        "link": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "message", "type", "createdAt", "read"]
+    },
+    "AdvisorQuestion": {
+      "title": "Advisor Question",
+      "description": "Question uploaded by an advisor for students to rate",
+      "type": "object",
+      "properties": {
+        "text": { "type": "string" },
+        "facultyId": { "type": "string" },
+        "facultyName": { "type": "string" },
+        "targetClass": { "type": "string" },
+        "active": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["text", "facultyId", "targetClass", "active"]
+    },
+    "AdvisorFeedback": {
+      "title": "Advisor Feedback",
+      "description": "Student rating for an advisor question",
+      "type": "object",
+      "properties": {
+        "questionId": { "type": "string" },
+        "studentId": { "type": "string" },
+        "rating": { "type": "number", "minimum": 1, "maximum": 10 },
+        "comment": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["questionId", "studentId", "rating"]
+    },
+    "ChatMessage": {
+      "title": "Chat Message",
+      "description": "A message sent in a group chat",
+      "type": "object",
+      "properties": {
+        "text": { "type": "string" },
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "senderRole": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["text", "senderId", "senderName", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Core user document"
+    },
+    "/users/{userId}/profiles/main": {
+      "schema": { "$ref": "oneOf [StudentProfile, FacultyProfile, HodProfile]" },
+      "description": "Role-specific profile details"
+    },
+    "/users/{userId}/attendance/{date}": {
+      "schema": "AttendanceRecord",
+      "description": "Student attendance history (only for students)"
+    },
+    "/users/{userId}/documents/{docId}": {
+      "schema": "Document",
+      "description": "Student files (only for students)"
+    },
+    "/users/{userId}/notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "User alerts and notifications"
+    },
+    "/announcements/{announcementId}": {
+      "schema": "Announcement",
+      "description": "Bulletin board items"
+    },
+    "/courses/{courseId}": {
+      "schema": "Course",
+      "description": "Individual subjects"
+    },
+    "/classrooms/{classroomId}": {
+      "schema": "Classroom",
+      "description": "Class levels and groupings"
+    },
+    "/assignments/{assignmentId}": {
+      "schema": "Assignment",
+      "description": "Course assignments"
+    },
+    "/resources/{resourceId}": {
+      "schema": "LearningResource",
+      "description": "Shared study materials"
+    },
+    "/users/{userId}/feedback/{feedbackId}": {
+      "schema": "Feedback",
+      "description": "Faculty comments on student performance"
+    },
+    "/advisor_questions/{questionId}": {
+      "schema": "AdvisorQuestion",
+      "description": "Survey questions from advisors"
+    },
+    "/advisor_questions/{questionId}/responses/{responseId}": {
+      "schema": "AdvisorFeedback",
+      "description": "Student responses to survey questions"
+    },
+    "/global_chats/{groupId}/messages/{messageId}": {
+      "schema": "ChatMessage",
+      "description": "Real-time messages for groups (classrooms, departments)"
+    }
+  }
+}

@@ -1,0 +1,150 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // -------------------------------------------------------------------------
+    // HELPERS
+    // -------------------------------------------------------------------------
+    
+    function isSignedIn() { return request.auth != null; }
+    function isVerified() { return isSignedIn(); } 
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    
+    function getUserData(userId) {
+      return get(/databases/$(database)/documents/users/$(userId)).data;
+    }
+    
+    function getProfileData(userId) {
+      return get(/databases/$(database)/documents/users/$(userId)/profiles/main).data;
+    }
+    
+    function hasRole(role) {
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData(request.auth.uid).role == role;
+    }
+    
+    function isAdmin() { return hasRole('admin'); }
+    function isHod() { return hasRole('hod'); }
+    function isFaculty() { return hasRole('faculty'); }
+
+    function getMyProfile() {
+      return getProfileData(request.auth.uid);
+    }
+
+    // -------------------------------------------------------------------------
+    // RULES
+    // -------------------------------------------------------------------------
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Connection Test ---
+    match /_connection_test_/{docId} {
+      allow read: if true;
+    }
+
+    // --- Users Collection ---
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isHod() || isFaculty() || isAdmin();
+      allow list: if isHod() || isFaculty() || isAdmin();
+      
+      allow create: if isSignedIn() && isOwner(userId) 
+        && request.resource.data.keys().hasAll(['email', 'role', 'profileCompleted', 'createdAt'])
+        && request.resource.data.role in ['student', 'faculty', 'hod', 'admin'];
+        
+      allow update: if isOwner(userId) || isAdmin();
+
+      // --- Profiles Subcollection ---
+      match /profiles/main {
+        allow read: if isOwner(userId) || isHod() || isFaculty() || isAdmin();
+        allow write: if isOwner(userId) || isAdmin();
+      }
+
+      // --- Attendance Subcollection ---
+      match /attendance/{date} {
+        allow read: if isOwner(userId) || isHod() || isFaculty() || isAdmin();
+        // Only Faculty, HOD, and Admin can mark attendance
+        allow write: if isFaculty() || isHod() || isAdmin();
+      }
+
+      // --- Documents Subcollection ---
+      match /documents/{docId} {
+        allow read: if isOwner(userId) || isHod() || isFaculty() || isAdmin();
+        allow write: if isOwner(userId) || isAdmin();
+      }
+    }
+
+    // --- Announcements Collection ---
+    match /announcements/{announcementId} {
+      allow read: if isVerified();
+      allow create: if isHod() || isFaculty() || isAdmin();
+      allow update, delete: if isHod() || isFaculty() || isAdmin();
+    }
+
+    // --- Courses Collection ---
+    match /courses/{courseId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin() || isHod() || (isFaculty() && request.resource.data.facultyId == request.auth.uid);
+    }
+
+    // --- Classrooms Collection ---
+    match /classrooms/{classroomId} {
+      allow read: if isHod() || isFaculty() || isAdmin() || (isOwner(resource.data.advisorId));
+      allow write: if isHod() || isAdmin();
+    }
+
+    // --- Assignments Collection ---
+    match /assignments/{assignmentId} {
+      allow read: if isSignedIn();
+      allow create: if isHod() || isFaculty() || isAdmin();
+      allow update, delete: if isAdmin() || isHod() || (isOwner(resource.data.facultyId));
+    }
+
+    // --- Resources Collection ---
+    match /resources/{resourceId} {
+      allow read: if isSignedIn();
+      allow create: if isHod() || isFaculty() || isAdmin();
+      allow update, delete: if isAdmin() || isHod() || (isOwner(resource.data.facultyId));
+    }
+
+    // --- Feedback Collection (Sub-collection of Users) ---
+    match /users/{userId}/feedback/{feedbackId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isFaculty() || isHod() || isAdmin());
+      allow create: if isFaculty() || isHod() || isAdmin();
+      allow update, delete: if isAdmin() || isHod() || (isOwner(resource.data.facultyId));
+    }
+
+    // --- Notifications Collection (Sub-collection of Users) ---
+    match /users/{userId}/notifications/{notificationId} {
+      allow read: if isOwner(userId);
+      allow create: if isSignedIn();
+      allow update: if isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow delete: if isOwner(userId);
+    }
+
+    // --- Advisor Questions ---
+    match /advisor_questions/{questionId} {
+      allow read: if isSignedIn();
+      allow create: if isFaculty() || isAdmin();
+      allow update, delete: if (isFaculty() && resource.data.facultyId == request.auth.uid) || isAdmin();
+      
+      match /responses/{responseId} {
+        allow read: if isFaculty() || isAdmin() || isHod();
+        allow create: if isSignedIn() && request.resource.data.studentId == request.auth.uid;
+        allow update, delete: if false;
+      }
+    }
+
+    // --- Global Chats ---
+    match /global_chats/{groupId} {
+      allow read: if isSignedIn();
+      match /messages/{messageId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() 
+          && request.resource.data.senderId == request.auth.uid
+          && request.resource.data.text is string 
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() < 5000;
+      }
+    }
+  }
+}
